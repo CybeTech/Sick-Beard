@@ -29,9 +29,10 @@ import datetime
 
 from name_parser.parser import NameParser, InvalidNameException
 
-resultFilters = ["sub(pack|s|bed)", "nlsub(bed|s)?", "swesub(bed)?",
-                 "(dir|sample|nfo)fix", "sample", "(dvd)?extras", 
-                 "dub(bed)?"]
+resultFilters = ["sub(pack|s|bed)?", "nlsub(bed|s)?", "swesub(bed)?",
+                 "(dir|sample|nfo)fix", "sample", "(dvd)?extras"]
+
+mandatory = ["german"]
 
 def filterBadReleases(name):
     """
@@ -70,6 +71,11 @@ def filterBadReleases(name):
             logger.log(u"Invalid scene release: "+name+" contains "+x+", ignoring it", logger.DEBUG)
             return False
 
+    for x in mandatory:
+        if not re.search('(^|[\W_])'+x+'($|[\W_])', check_string, re.I):
+            logger.log(u"Mandatory string not found: "+name+" doesnt contains "+x+", ignoring it", logger.DEBUG)
+            return False			
+			
     return True
 
 def sceneToNormalShowNames(name):
@@ -206,7 +212,7 @@ def isGoodResult(name, show, log=True):
 
     for curName in set(showNames):
         escaped_name = re.sub('\\\\[\\s.-]', '\W+', re.escape(curName))
-        curRegex = '^' + escaped_name + '\W+(?:(?:S\d[\dE._ -])|(?:\d\d?x)|(?:\d{4}\W\d\d\W\d\d)|(?:(?:part|pt)[\._ -]?(\d|[ivx]))|Season\W+\d+\W+|E\d+\W+)'
+        curRegex = escaped_name + '\W+(?:(?:S\d[\dE._ -])|(?:\d\d?x)|(?:\d{4}\W\d\d\W\d\d)|(?:(?:part|pt)[\._ -]?(\d|[ivx]))|(Season|Staffel)\W+\d+\W+|E\d+\W+)'
         if log:
             logger.log(u"Checking if show "+name+" matches " + curRegex, logger.DEBUG)
 
@@ -215,7 +221,8 @@ def isGoodResult(name, show, log=True):
         if match:
             logger.log(u"Matched "+curRegex+" to "+name, logger.DEBUG)
             return True
-
+        logger.log(u"##__## Didn't matched "+curRegex+" to "+name, logger.DEBUG)
+		
     if log:
         logger.log(u"Provider gave result "+name+" but that doesn't seem like a valid result for "+show.name+" so I'm ignoring it")
     return False
